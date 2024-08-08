@@ -1,13 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"os/signal"
 	"runtime"
 	"runtime/pprof"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/fatih/color"
@@ -22,14 +19,17 @@ func init() {
 }
 
 func main() {
+	color.Green("Starting CPU profiling")
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGPROF)
-	go func() {
-		for {
-			<-sig
-		}
-	}()
+	/*
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGPROF)
+		go func() {
+			for {
+				<-sig
+			}
+		}()
+	*/
 	runtime.SetCPUProfileRate(400)
 	fh, err := os.Create("cpu.prof")
 	if err != nil {
@@ -38,35 +38,28 @@ func main() {
 
 	defer fh.Close()
 
-	pprof.StartCPUProfile(fh)
+	if serr := pprof.StartCPUProfile(fh); serr != nil {
+		panic(serr.Error())
+	}
 	defer pprof.StopCPUProfile()
 
 	var wg sync.WaitGroup
 
-	for i := uint64(0); i < 5000000; i++ {
+	for i := uint64(0); i < 500; i++ {
 		wg.Add(1)
-		go doWork(&wg, i)
+		go doWork(&wg)
 		if i%100000 == 0 {
 			runtime.GC()
 		}
 	}
 }
 
-func doWork(wg *sync.WaitGroup, counter uint64) {
+func doWork(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s := fnord.GetRandomString(120)
-	if fnord.StringContainsName(s) {
-		color.Green(s)
-		color.Green("HIT: %d\n", counter)
-		fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
-		os.Exit(0)
-	}
-	if fnord.StringRegexName(s) {
-		color.Green(s)
-		color.Green("HIT: %d\n", counter)
-		fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
-		os.Exit(0)
-	}
+	s := fnord.GetWorkingData()
+
+	fnord.BubbleSort(s)
+	color.HiBlack("BubbleSort done in %v\n", time.Since(startTime))
 }
 
 func setTimeZoneToUTC() {

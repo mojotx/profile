@@ -1,7 +1,6 @@
 package fnord
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -18,37 +17,51 @@ func TestGetRandomString(t *testing.T) {
 		t.Errorf("Expected string of length %d, got %d", length, len(s))
 	}
 }
-func TestStringContainsName(t *testing.T) {
 
-	s := fmt.Sprintf("Hello, %s!", magicWord)
-	if !StringContainsName(s) {
-		t.Errorf("Expected string to contain magic word, but it didn't")
-	}
-
-	if !StringRegexName(s) {
-		t.Errorf("Expected string to contain magic word, but it didn't")
-	}
-
-	s = "Goodbye"
-	if StringContainsName(s) {
-		t.Errorf("Expected string to not contain magic word, but it did")
-	}
-
-	if StringRegexName(s) {
-		t.Errorf("Expected string to not contain magic word, but it did")
+func BenchmarkBubbleSort(b *testing.B) {
+	s := GetWorkingData()
+	for i := 0; i < b.N; i++ {
+		BubbleSort(s)
 	}
 }
 
-func BenchmarkStringRegex(b *testing.B) {
-	s := fmt.Sprintf("Hello, %s!", magicWord)
-	for i := 0; i < b.N; i++ {
-		StringRegexName(s)
-	}
+type TestData[T SortableConstraint] struct {
+	name  string
+	slice []T
+	want  bool
 }
 
-func BenchmarkStringContains(b *testing.B) {
-	s := fmt.Sprintf("Hello, %s!", magicWord)
-	for i := 0; i < b.N; i++ {
-		StringContainsName(s)
+func TestSliceIsSorted(t *testing.T) {
+
+	var testData = []TestData{
+		{
+			name:  "int unsorted slice",
+			slice: []int{8, 6, 7, 5, 3, 0, 9},
+			want:  false,
+		},
+		{
+			name:  "int sorted slice",
+			slice: []int{1, 2, 3, 5, 8, 13, 21},
+			want:  true,
+		},
+		{
+			name:  "float64 unsorted slice",
+			slice: []float64{8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0},
+			want:  false,
+		},
+		{
+			name:  "float64 sorted slice",
+			slice: []float64{1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0},
+			want:  true,
+		},
+	}
+
+	for _, td := range testData {
+		t.Run(td.name, func(t *testing.T) {
+			got := SliceIsSorted(td.slice)
+			if got != td.want {
+				t.Errorf("Expected %v, got %v", td.want, got)
+			}
+		})
 	}
 }
